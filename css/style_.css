@@ -1,0 +1,17 @@
+#tv{
+	left:50px;
+}
+#d3_link{
+	font-size: 20px;
+}
+#d3_link:active{
+   color:grey;
+}
+#d3_link:hover {
+    font-size: 14px;
+    color:red;
+}
+#d3_link:selected {
+    font-size: 14px;
+    color:grey;
+}

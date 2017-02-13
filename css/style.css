@@ -1,0 +1,137 @@
+
+#header{
+    height:7%;    
+    width:100%;
+    background-color: grey;
+    position: fixed;
+    top:0.1%;
+    left:0%;
+}
+#main{
+    background-color: red;
+}
+#drop-down{
+    position: fixed;
+    left: 40%; 
+    top:4%; 
+    border-color: grey;
+}
+.tabcontent {
+    display: none;
+    padding: 6px 12px;
+    /*border: 1px solid #ccc;*/
+    border-top: none;
+}
+#county{
+    position: absolute;
+    left:25%;
+    top:15%;
+    background-color: white;
+}
+#icon{
+    position: fixed;
+    left:55%;
+    top:8%;
+}
+#icon:active{
+   border: 1px solid #ccc;
+}
+#info_icon{
+    position: fixed;
+    left:2%;
+    top:8%;
+}
+#info_link{
+   color: red;
+}
+#info_link:active {
+    color: black;
+}
+#info_link:hover {
+    font-size: 14px;
+}
+#icon_refresh{
+    position: fixed;
+    left:57%;
+    top:8%;
+}
+#icon_refresh:active{
+     border: 1px solid #ccc;
+}
+#save_icon{
+    position: fixed;
+    left:59%;
+    top:8%;
+}
+#save_icon:active{
+     border: 1px solid #ccc;
+}
+#log_label{
+    position: fixed;
+    left:0.5%;
+    top:77%;
+    color:grey;
+    font-size: 12px;
+}
+#color_pallete{
+    width:20%;
+    height:20%;
+    background-color: red;
+}
+#legend{
+    position: fixed;
+    left:58.5%;
+    top:12%;
+}
+#console{
+    width: 25%;
+    height:100px;
+    position: relative;
+    left:0%;
+    top:550px;  
+    background-color: transparent;
+    border: 1px solid #ccc;
+    overflow: scroll;
+    white-space: pre; 
+}
+#error{
+    font-size:11px;
+}
+#tv{
+        left:330px;
+}
+
+/*ul.tab {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    border: 3px solid #ccc;
+    background-color: #808080;
+    width: 200px;
+    height: 50px;
+    position: absolute;
+    left: 445px;
+    border-radius: 7px;
+
+}
+/*
+ul.tab li a:hover {background-color: #ddd;}
+
+
+ul.tab li a:focus, .active {background-color: #ccc;}*/
+
+/* Style the tab content */
+/* Float the list items side by side 
+ul.tab li {float: left;}*/
+
+/* Style the links inside the list items */
+/*ul.tab li a {
+    display: inline-block;
+    color: black;
+    text-align: center;
+    padding: 24px 16px;
+    text-decoration: none;
+    transition: 0.3s;
+    font-size: 17px;
+}*/

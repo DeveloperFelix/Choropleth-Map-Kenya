@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  div.tooltip {   
+  position: absolute;           
+  text-align: left;           
+  width: 150px;                  
+  height: 50px;                 
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background: white;   
+  border: 1px solid grey;      
+  border-radius: 8px;           
+  pointer-events: none;  
+  white-space: pre; 
+} 
+div.infotip {   
+  position: absolute;           
+  text-align: center;           
+  width: 100px;                  
+  height: 15px;                 
+  padding: 2px;             
+  font: 12px sans-serif;        
+  background: white;   
+  border: 1px solid black;      
+  border-radius: 8px;           
+  pointer-events: none;  
+  white-space: pre; 
+} 
+</style>
+  <link rel="stylesheet" type="text/css" href="css/style.css">
+  <script  src="lib/d3/d3.v3.min.js"></script>
+  <script  src="lib/d3/topojson.v1.min.js"></script>
+  <script  src="js/html2canvas.js"></script>
+  <script  src="lib/jscolor-2.0.4/jscolor.min.js"></script>
+  <script  src="js/set.js"></script>
+
+<TITLE>Kenya Choropleth map builder</TITLE>
+<META NAME="DESCRIPTION" CONTENT="Kenya Choropleth map builder format,upload,visualize and save.">
+<META NAME="KEYWORDS" CONTENT="Choroplethmap-kenya.org,Choroplethmap,kenya dataviz,kenya choropleth map,kenya counties,kenya constituencies,d3 kenya,choropleth map,d3">
+<link rel="icon" 
+      type="image/png" 
+      href="icons/favicon.png">
+</head>
+<!-- <div id="main"> -->
+<div id="header"></div>	
+<select  id="drop-down" onchange="chooseAdminBoundary()";>
+<option  value="county">County Map</option>
+<option  value="const">Constituency Map</option>
+</select>
+<input type="file"  accept=".csv" id="theFile" hidden="hidden"/>
+<img src="icons/add_1.png" width="22px" height="22px" id="icon" onclick="performClick()" alt="addFile">
+<label id="log_label" >file output</label>
+<img src="icons/refresh.png" width="22px" height="22px" id="icon_refresh" onclick="refresh()" alt="refresh">
+<a  id="info_link" HREF="info.html"><label id="info_icon"  alt="info">How it works</label></a>
+<img id="save_icon" src="icons/save.png" width="22px" height="22px" onclick="saveImage()" alt="save">
+<div id="county">
+	<div id="legend">
+	</div>
+</div>
+<div id="console"></div>
+<input type="color"  class="col" id="jsc" hidden="hidden">
+<!-- </div> -->
+<!-- <div id="Ward"      class="tabcontent"></div> -->
+<script type="text/javascript">
+	
+var default_color_range  = ["#ffffb2","#fecc5c","#fd8d3c","#f03b20","#bd0026"];
+var _default_color_range = ["#8c510a","#d8b365","#f6e8c3","#d53e4f","#c7eae5","#5ab4ac","#01665e"];
+var labels               = ["0-20  %","21-40 %","41-60 %","61-80 %","81 % >"];	
+var _labels               = ["0-20","21-40","41-60","61-80","81"];	
+var colorDomain          = [0,20,40,60,80,100];
+var node_id              = ["poor","avg","good","better","best"];
+
+
+var color               = d3.scale.linear().domain(colorDomain).range(default_color_range);
+
+
+var svg = d3.select("#county")
+	            .append("svg")
+	            .attr("width",750)
+	            .attr("height",550)
+	            .style("background-color","transparent");
+
+var div = d3.select("#county")
+            .append("div")   
+            .attr("class", "tooltip")  
+            .style("opacity", 0);     
+
+var div_ = d3.select("#county")
+            .append("div")   
+            .attr("class", "infotip")  
+            .style("opacity", 0);                 
+
+var svg_legend = d3.select("#legend")
+	            .append("svg")
+	            .attr("width",300)
+	            .attr("height",400)
+	            .style("background-color","transparent");         
+
+
+var projection = d3.geo.mercator()
+		           .scale(2800)
+		           .center([39.3,0.5])
+		           .translate([600 / 2, 550 / 2.2]);
+
+var path    = d3.geo.path()
+		        .projection(projection);
+
+var set_temp  = new Set();
+var _set_temp = new Set();
+
+
+countyMap();  
+icontoolTip();    
+
+
+function countyMap(){
+
+	  d3.json("json/kenyan-counties.geojson",function(data){
+
+	    svg.selectAll("path")
+	       .data(data.features)
+	       .enter()
+	       .append("path")
+	       .attr("d",path)
+	       .attr("id",function(d){
+	       
+	       
+	       try{
+	          str=d.properties.COUNTY.toUpperCase().replace("/","_").replace("\.","_").replace(/ /gi,"_").replace(/\//g,"_");
+	        }catch(error){}
+
+	       if(str=="KEIYO-MARAKWET"){
+	           str="elegeyo_marakwet".toUpperCase();
+	       }else if(str=="THARAKA"){
+	           str="tharaka_nithi".toUpperCase();
+	        }
+	            return str.replace("\'","");
+	       })
+	       .attr("class","reg")
+	       .attr("stroke","grey")
+	       .attr("fill","transparent");                              
+     });
+}
+function subcountyMap(){
+
+	
+
+	  d3.json("json/constituencies.json",function(data){
+
+		  svg.selectAll("path")
+	       .data(data.features)
+	       .enter()
+	       .append("path")
+	       .attr("d", path)
+	       .attr("id",function(d){  
+	       
+	           var temp_str=d.properties.CONSTITUEN;
+	         
+	         if(temp_str==="CHUKA/IGAMBANG'OMBE"){
+	             temp_str="CHUKA_IGAMBANGOMBE";
+	         }else if(temp_str==="MT. ELGON"){
+	             temp_str="MT_ELGON";
+	         }else if(temp_str==="OL JOROK"){
+	             temp_str="OL JORO OROK";
+	         }else if(temp_str==="WEBUTE WEST"){
+	             temp_str="WEBUYE WEST";
+	         }else if(temp_str==="KIAMBU"){
+	             temp_str="KIAMBU TOWN";
+	         }else if(temp_str==="SIGOWET/SOIN"){
+	 			 temp_str="SIGOWET_SOIN"
+	         }
+	           return  temp_str.replace(/ /gi,"_").replace(/\//g,"_");
+	       })
+	       .attr("class","cons_node")
+	       .attr("stroke","grey")
+	       .attr("fill","transparent")
+	       .on("mouseover",function(d){
+
+		        var temp=this.id;
+
+		        // console.log(this);
+
+               });
+
+	       });            
+}
+function chooseAdminBoundary() {
+
+	var selected_map = document.getElementById("drop-down").value;
+
+	if(selected_map === "county"){
+
+        refreshNodes();
+        countyMap();  
+
+	}else if(selected_map === "const"){
+
+       refreshNodes();
+       subcountyMap();  
+
+	}
+}
+function refreshNodes(){
+
+	svg.selectAll(".cons_node")
+          .remove();
+
+	svg.selectAll(".reg")
+        .remove();
+
+    svg_legend.selectAll(".ord_rect")
+        .remove();
+
+     svg_legend.selectAll(".legend_rect")
+       .remove();
+
+     svg_legend.selectAll(".legend_text")
+        .remove();
+
+      svg_legend.selectAll(".ord_text")
+        .remove();            
+
+    document.querySelector("#console").innerHTML="";
+    document.getElementById("theFile").value = "";
+
+     set_temp= new Set();
+      _set_temp=new Set();
+}
+function performClick() {
+
+    var chooser = document.querySelector("#theFile");
+    chooser.addEventListener("change", changeEvent);
+    chooser.click();
+}
+function changeEvent(evt){
+
+   url = URL.createObjectURL(evt.target.files[0]);
+   loadData(url);
+}
+function quantitativeLegend(){
+
+	svg_legend.selectAll(".legend_rect")
+		.data(default_color_range)
+		.enter()
+		.append("rect")
+		.attr("x",15)
+		.attr("class","legend_rect")
+		.attr("y",function(d,i){
+		     return  (i * 20)+170;
+		})
+		.attr("width",15)
+		.attr("height",15)
+		.attr("id",function(d,i){return node_id[i];})
+		.attr("fill",function(d){return d;})
+		.on("click",function(d){
+
+	    var rect_bg = this;
+
+	    var chooser = document.querySelector("#jsc");
+
+		chooser.addEventListener("change",function(evt) {
+
+            var temp_color=document.querySelector("#jsc").value
+
+			svg_legend.select("#"+rect_bg.id)
+	            .attr("fill",temp_color);
+
+            _set_temp.add(temp_color);
+
+           if(_set_temp.values.length == 5){
+    
+               var _color = d3.scale.linear().domain(colorDomain).range(_set_temp.values);
+               var selected_map = document.getElementById("drop-down").value;
+
+               if(selected_map == "county"){
+
+               svg.selectAll(".reg")
+                  .each(function(d){
+
+                    d3.select(this)
+                      .attr("fill",_color(parseFloat(d3.select(this)["0"]["0"].textContent)));
+                  });
+
+               }else if(selected_map == "const"){
+
+               svg.selectAll(".cons_node")
+                  .each(function(d){
+
+                    d3.select(this)
+                      .attr("fill",_color(parseFloat(d3.select(this)["0"]["0"].textContent)));
+                  });
+               }
+
+            }
+         
+	     rect_bg=""; 
+
+		},false);
+
+	 	 chooser.click();  
+
+		})
+		.on("mouseout",function(d){
+
+		});
+
+
+
+	svg_legend.selectAll(".legend_text")
+			.data(colorDomain)
+			.enter()
+			.append("text")
+			.attr("class","legend_text")
+			.attr("font-size","10px")
+		    .attr("x",35)
+		    .attr("y", function(d, i){ return  (i * 20)+182;})
+		    .text(function(d, i){return labels[i]; });	
+}
+function ordinalLegend(rry){
+
+ 
+   var _ord_color = d3.scale.ordinal().domain(rry.values).range(_default_color_range);
+
+	svg_legend.selectAll(".ord_rect")
+		.data(rry.values)
+		.enter()
+		.append("rect")
+		.attr("x",80)
+		.attr("class","ord_rect")
+		.attr("opacity",1)
+		.attr("y",function(d,i){
+		     return  (i * 20)+170;
+		})
+		.attr("width",15)
+		.attr("height",15)
+		.attr("id",function(d,i){return rry.values[i];})
+		.attr("fill",function(d){return _ord_color(this.id);})
+		.on("click",function(d){
+
+	    var rect_bg = this;
+
+	    var chooser = document.querySelector("#jsc");
+
+		chooser.addEventListener("change",function(evt) {
+    
+            var temp_color=document.querySelector("#jsc").value;
+
+			svg_legend.select("#"+rect_bg.id)
+	            .attr("fill",temp_color);
+
+	        var legend_size=svg_legend.selectAll(".ord_rect").size();
+
+	         _set_temp.add(temp_color);
+
+           if(_set_temp.values.length == legend_size){
+
+           	 var selected_map = document.getElementById("drop-down").value;
+             var ord_color = d3.scale.ordinal().domain(set_temp.values).range(_set_temp.values);
+
+           	 if(selected_map == "county"){
+
+           	   svg.selectAll(".reg")
+                  .each(function(d){
+
+                    d3.select(this)
+                      .attr("fill",ord_color(d3.select(this)["0"]["0"].textContent));
+                  });
+
+                  ord_color="";
+                  legend_size=0;
+
+           	 }else if(selected_map == "const"){
+
+               svg.selectAll(".cons_node")
+                  .each(function(d){
+
+                    d3.select(this)
+                      .attr("fill",ord_color(d3.select(this)["0"]["0"].textContent));
+                  });
+
+                  ord_color="";
+                  legend_size=0;
+           	 }
+            }
+        
+	     rect_bg=""; 
+
+		},false);
+	    
+	 	 chooser.click();  
+
+		})
+		.on("mouseout",function(d){
+
+		});
+
+
+	svg_legend.selectAll(".ord_text")
+		.data(rry.values)
+		.enter()
+		.append("text")
+		.attr("class","ord_text")
+	    .attr("x",15)
+	    .attr("font-size","10px")
+	    .attr("y", function(d, i){ return  (i * 20)+182;})
+	    .text(function(d, i){ return rry.values[i]; });	
+}
+function loadData(file_url){
+
+    reConfigScale(file_url);
+
+
+	d3.csv(file_url,function(data){
+
+
+    if(Object.keys(data[0]).length == 2){
+
+	  if(Object.keys(data[0]).includes("GROUP")){
+
+	  	 if(set_temp.values.length <= 7){
+
+	      data.forEach(function(d){
+
+         		var temp = d["GROUP"].replace(/ /gi,"_").replace(/\//g,"_").toUpperCase();
+
+         		var ord_color = d3.scale.ordinal().domain(set_temp.values).range(_default_color_range);
+
+		 		scaleType("GROUP",d,ord_color(temp));
+       
+		 		ordinalLegend(set_temp);
+
+		});
+	  }else{
+	  	console.log("Categories more than 7");
+	  }
+
+	   }else if(Object.keys(data[0]).includes("VALUE")){
+
+           quantitativeLegend();
+
+	      data.forEach(function(d){
+
+			scaleType("VALUE",d,color(d["VALUE"]));
+
+		});
+
+      }
+
+       }else{
+         console.log("file should have only two columns ,CONSTITUENCY/COUNTY ,GROUP/VALUE");
+       }
+       //chech column count
+
+	 });
+
+	mouseOver();
+}
+function mouseOver(){
+
+ var selected_map = document.getElementById("drop-down").value;
+
+ if(selected_map ==="county"){
+
+  d3.selectAll(".reg")
+    .on("mouseover",function(d){
+     	showTooltip("\t\t"+this.id+"\n"+d3.select(this)["0"]["0"].textContent);
+    });
+
+  }else if(selected_map === "const"){
+
+  d3.selectAll(".cons_node")
+    .on("mouseover",function(d){
+     	showTooltip(this.id+"\n"+d3.select(this)["0"]["0"].textContent);
+    });
+
+  }
+}
+function reConfigScale(file_url){
+
+	d3.csv(file_url,function(data){
+
+		data.forEach(function(d){
+        
+        try{
+		 var temp = d["GROUP"].toUpperCase();	
+		     	    set_temp.add(temp);
+
+        }catch(err){
+        	
+        }
+		});
+	 
+	 });			
+}
+function scaleType(type,d,color){
+
+ var selected_map = document.getElementById("drop-down").value;
+
+	if(selected_map === "const"){
+
+      var temp=d["CONSTITUENCY"].replace(/ /gi,"_").replace(/\//g,"_").toUpperCase();
+   
+	  log(d,"CONSTITUENCY",type);
+
+       d3.select("#"+temp)
+         .text(type === "GROUP" ? d["GROUP"] : d["VALUE"])
+         .attr("fill",color);
+
+	}else if(selected_map === "county"){
+
+		 var temp=d["COUNTY"].replace(/ /gi,"_").replace(/\//g,"_").toUpperCase();
+
+		  log(d,"COUNTY",type);
+
+           d3.select("#"+temp)
+             .text(type === "GROUP" ? d["GROUP"] : d["VALUE"])
+             .attr("fill",color);
+	 }
+}
+function log(data,region,type){
+  
+   var temp     = parseInt(data["VALUE"]);
+   var set_temp = new Set();
+
+   var para = document.querySelector("#console");
+  
+    // if(isNaN(temp)){
+
+      var p = document.createElement("p");
+       p.id = "error";
+      var t = document.createTextNode(data[region] + ","+ data[type]);
+       
+      p.appendChild(t); 
+      para.appendChild(p);
+
+     // }else{
+
+     //  var pp = document.createElement("p");
+     //   pp.id = "fine";
+     //  var tt  = document.createTextNode(data[region] + ","+ data[type]+"\t:"+i+1);
+     //   tt.id  = "text-fine";
+
+     //  pp.appendChild(tt); 
+     //  para.appendChild(pp);
+
+     // }
+}
+function refresh(){
+
+    chooseAdminBoundary();
+    document.getElementById("theFile").value = "";
+    set_temp=new Set();
+    _set_temp=new Set();
+}
+function showTooltip(arg){
+
+    div.transition()            
+       .style("opacity",.9)
+       .text(arg)
+       .style("left",(d3.event.pageX-370)+"px")     
+       .style("top", (d3.event.pageY-100)+"px");
+
+    setTimeout( function(){
+
+		           div.transition()
+					  .style("opacity",0);
+
+					},400);   
+}
+function downloadURI(uri, name) {
+        var link = document.createElement("a");
+        link.download = name;
+        link.href = uri;
+        link.click();
+}
+function saveImage(){
+	printToFile(document.getElementById("county"));
+}
+function printToFile(div) {
+        html2canvas(div, {
+            onrendered: function (canvas) {
+                var myImage = canvas.toDataURL("image/png");
+                downloadURI("data:" + myImage, "map.png");
+            }
+        });
+}
+function infoTooltip(arg){
+	div_.transition()            
+       .style("opacity",.9)
+       .text(arg)
+       .style("left",(d3.event.pageX-370)+"px")     
+       .style("top", (d3.event.pageY-100)+"px");
+
+    setTimeout( function(){
+
+		           div_.transition()
+					  .style("opacity",0);
+
+					},500);   
+}
+function icontoolTip(){     
+
+	d3.selectAll("#save_icon")
+	  .on("mouseover",function(d){
+	      infoTooltip("Save as image");
+	  });
+	d3.selectAll("#icon_refresh")
+	  .on("mouseover",function(d){
+	      infoTooltip("Reset");
+	  });  
+	d3.selectAll("#icon")
+	  .on("mouseover",function(d){
+	     infoTooltip("upload file");
+	  });   
+}
+</script>
+</body>
+</html>
